@@ -33,8 +33,9 @@ void MessageQueue<T>::send(T &&msg)
     std::lock_guard<std::mutex> uLock(_mutex);
 
     // add vector to queue
+    _messages.clear();
     _messages.push_back(std::move(msg));
-    _cond.notify_one(); // notify client after pushing new Vehicle into vector
+    _cond.notify_one();
 }
 
 
@@ -51,7 +52,7 @@ void TrafficLight::waitForGreen()
     // runs and repeatedly calls the receive function on the message queue. 
     // Once it receives TrafficLightPhase::green, the method returns.
     while(true) {
-        if (msgQueue.receive() == green) return;
+        if (_msgQueue.receive() == green) return;
     } 
 
 }
@@ -63,7 +64,7 @@ TrafficLightPhase TrafficLight::getCurrentPhase()
 
 void TrafficLight::setCurrentPhase(TrafficLightPhase phase)
 {
-    TrafficLight::_currentPhase = phase;
+    _currentPhase = phase;
 }
 
 void TrafficLight::simulate()
@@ -81,18 +82,18 @@ void TrafficLight::cycleThroughPhases()
     // Also, the while-loop should use std::this_thread::sleep_for to wait 1ms between two cycles.
     std::random_device rd;
     std::mt19937 mt(rd());
-    std::uniform_real_distribution<double> dist(4.0, 6.0);
+    std::uniform_real_distribution<double> dist(4000.0, 6000.0);
     auto prev_time = std::chrono::system_clock::now();
-    double target = dist(mt);
+    double cycle_duration = dist(mt);
     while(true) {
         auto current_time = std::chrono::system_clock::now();
-        auto diff = current_time - prev_time;
-        if (diff.count() >= target) {
+        auto elapsed_time = std::chrono::duration_cast<std::chrono::milliseconds> (current_time - prev_time);
+        if (elapsed_time.count() >= cycle_duration) {
             prev_time = current_time;
-            target = dist(mt);
+            cycle_duration = dist(mt);            
+            (getCurrentPhase() == red) ? setCurrentPhase(green) : setCurrentPhase(red);
             auto msg = getCurrentPhase();
-            msg == red ? setCurrentPhase(green) : setCurrentPhase(red);
-            msgQueue.send(std::move(msg));
+            _msgQueue.send(std::move(msg));
         }
         std::this_thread::sleep_for(std::chrono::milliseconds(1));
     } 
