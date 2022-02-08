@@ -44,7 +44,7 @@ class TrafficLight : TrafficObject
 public:
     // constructor / desctructor
     TrafficLight();
-    ~TrafficLight();
+    //~TrafficLight();
     // getters / setter
     TrafficLightPhase getCurrentPhase();
     void setCurrentPhase(TrafficLightPhase phase);
