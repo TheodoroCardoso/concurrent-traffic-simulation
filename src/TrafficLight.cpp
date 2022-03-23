@@ -34,7 +34,7 @@ void MessageQueue<T>::send(T &&msg)
 
     // add vector to queue
     _messages.clear();
-    _messages.push_back(std::move(msg));
+    _messages.emplace_back(msg);
     _cond.notify_one();
 }
 
@@ -81,13 +81,15 @@ void TrafficLight::cycleThroughPhases()
     // to the message queue using move semantics. The cycle duration should be a random value between 4 and 6 seconds. 
     // Also, the while-loop should use std::this_thread::sleep_for to wait 1ms between two cycles.
     std::random_device rd;
-    std::mt19937 mt(rd());
-    std::uniform_real_distribution<double> dist(4000.0, 6000.0);
+    static std::mt19937 mt(rd());
+    static std::uniform_real_distribution<double> dist(4000.0, 6000.0);
     auto prev_time = std::chrono::system_clock::now();
     double cycle_duration = dist(mt);
+    auto current_time = std::chrono::system_clock::now();
+    auto elapsed_time = std::chrono::duration_cast<std::chrono::milliseconds> (current_time - prev_time);
     while(true) {
-        auto current_time = std::chrono::system_clock::now();
-        auto elapsed_time = std::chrono::duration_cast<std::chrono::milliseconds> (current_time - prev_time);
+        current_time = std::chrono::system_clock::now();
+        elapsed_time = std::chrono::duration_cast<std::chrono::milliseconds> (current_time - prev_time);
         if (elapsed_time.count() >= cycle_duration) {
             prev_time = current_time;
             cycle_duration = dist(mt);            
